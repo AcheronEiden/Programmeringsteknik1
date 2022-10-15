@@ -1,0 +1,106 @@
+# ************************************************************
+# Alhassan Jawad - 000109XXXX
+# Civ.Elektroteknik - År 2
+# 22-9-2020
+# Programmeringsteknik 1 Obligatorisk uppgift 3 - deluppgift 1
+# ************************************************************
+
+#### Skapa filen ####
+filename = 'homeros.txt'            
+utfil = open(filename, 'w')                
+print('Natten gick hän', file=utfil)       
+print('och det grydde till dag', file=utfil)
+print('och de seglade ständigt', file=utfil)
+utfil.close()                              
+######################
+
+file = open('homeros.txt', 'r')
+
+import re
+lista = re.findall(r'[a-zA-ZåäöÅÄÖ]+', file.read())
+print(lista)
+
+# Deluppgift 1
+print('Antal ord: ', len(lista))
+# Funkar
+
+# Deluppgift 2
+freq = {}
+for i in lista:
+    if i.isalpha():
+        i = i.lower()
+        if i in freq:
+            freq[i] += 1 # Öka frekvensen
+        else:
+            freq[i] = 1 # Sätt frekvensen till 1
+lsta = list(freq.items()) # Visa varje tupel i lexikon freq o skapa en lista
+
+print('Antal olika ord: ', len(lsta), 'st')
+# Funkar
+
+# Deluppgift 3
+def part2(e): # Så att den returnerar värdet ej nyckelm
+    return e[1]
+sorterad = sorted(lsta, key=part2, reverse=True)
+# Key anger att den ska köra genom listan från lägsta till högsta
+# Reverse anger fallande ordning
+
+n = int(input(' Antal flest förekommande ord du vill se: '))
+m = int(input(' Antal minst förekommande ord du vill se: '))
+
+flest = []
+minst = []
+for i in range(n):
+    flest.append(sorterad[i])
+print('Flest förekommande orden är: ', flest)
+
+for i in range(m):
+    minst.append(sorterad[len(sorterad)-(1+i)])
+print('Minst förekommande orden är: ', minst)
+
+file.close()
+
+
+# *************************************************************
+# Alhassan Jawad - 000109XXXX
+# Civ.Elektroteknik - År 2
+# 22-9-2020
+# Programmeringsteknik 1 Obligatorisk uppgift 3 - deluppgift 2
+# *************************************************************
+
+import re
+
+with open('exempelkod.py', 'r',) as f:
+    exempel=f.read()
+    exe=exempel.split('\n')
+
+    rad = [re.sub(r'else|if|for|#.*$|[()/[\]{}+=,.0-9:\n]',' ', i)\
+           for i in exe]       # Ta bort oönskade kommentarer och tecken
+                               # från referenslistan
+# Det re.sub gör är att allt som kommer efter r' tas bort från den
+# önskade koden. #.*$ gör att allt efter # (kommentarer) tas bort tills $ nås,
+# $ står för slutet av strrängen.
+
+    lista = [re.findall(r'[\w]+', ord) for ord in rad] # \w skrivs istället för
+                                                       # a-zA-Z0-9_
+                                                       
+    ref={}
+
+    for index, rad in enumerate(lista, start=1):
+        for o in rad:
+            ref[o]=ref.get(o, [])
+            ref[o].append(index)
+    #print('****XOXOXOXOXOXO****')
+
+    for index, rad in enumerate(exe, start=1):
+        print(index, ' ', rad, end='\n') # Tillsätter radnummer o visar exempelkod
+        print('\n') # Testa att lägga radbyte i föregående!!!!
+    #print('****XOXOXOXOXOXO****')
+
+    #print('\n', '\n') # Kan jag på något sätt skriva om koden
+                      # men få samma effekt?
+                      
+    sorterad=sorted(ref.items()) # Sorterar tuplerna
+
+    for word, index in sorterad:
+        print('\t', '{:10}\t'.format(word), index) # Ge referenslista
