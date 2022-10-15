@@ -3,3 +3,4 @@ This is for saving my assignments & created files for the course Programmeringst
 This is a course given for python beginners. The course is given in swedish so all comments etc are in swedish.
 
 * The first assignment "Obligatorisk Uppgift 1" has three subproblems named "deluppgift 1-3"
+* The second assignment "Obligatorisk Uppgift 2" has two subproblems named "deluppgift 1-2"
