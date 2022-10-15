@@ -1,4 +1,5 @@
-# This is a course given for python beginners.
+# Prog1
+This is a course given for python beginners.
 This is for saving my assignments & created files for the course Programmeringsteknik 1 1TD433 - Uppsala Universitet.
 The course is given in swedish so all (most) comments etc are in swedish.
 
