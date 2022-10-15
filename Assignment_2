@@ -1,0 +1,100 @@
+# *************************************************************
+# Alhassan Jawad - 000109XXXX
+# Civ.Elektroteknik - År 2
+# 16-9-2020
+# Programmeringsteknik 1 Obligatorisk uppgift 2 - deluppgift 1
+# *************************************************************
+
+'''
+Uppgift 1a
+
+'''
+
+def smooth_a(x, n):
+    if n < 0:
+        print('n är negativ!!!!')
+        exit()
+    
+    r = []
+    b = x.copy() # Kopierar listan x då den kommer att användas i b-uppgiften
+    
+    for i in range(n): # Då listan b ska utvidgas med randelementen n ggr
+        b.insert(0, x[0])
+        b.extend([x[-1]])
+
+    # Använder listan b för att fylla listan r med medelvärdet av varje element
+    # (undantag randelementen)
+    for i in range(n-1, len(b)-n-1):
+        # För att få korrekta siffror så behöver den angivna formeln modifieras
+        r.append(sum(b[i-n+1:i+n+2])/(2*n+1)) # För att förjskuta position
+    print('Expanderat lista: ', b, '\n')
+    return r
+
+x = [1, 2, 6, 4, 5, 0, 1, 2]
+print('smooth_a(x, 1): ', smooth_a(x, 1), '\n')
+print('smooth_a(x, 2): ', smooth_a(x, 2))
+
+# Allt funkar
+##############################################################################
+
+
+'''
+Uppgift 1b
+
+'''
+
+def smooth_b(x, n):
+    if n < 0:
+        print('n är negativ!!!!')
+        exit()
+        
+    x = x.copy() # Kopierar listan, så den interfererar ej med den riktiga listan
+    ny_lista = []
+    for i in range(n, len(x)-n):
+        # För att få korrekta siffror så behöver den angivna formeln modifieras
+        ny_lista.append(sum(x[i-n:i+n+1])/(2*n+1)) # För att förjskuta position
+
+    # Då medelvärdet av randelementen beräknas
+    for i in range(n):
+        ny_lista.insert(i, sum(x[:i+n+1])/(n+1+i))
+        ny_lista.insert(len(x)-n, sum(x[len(x)-(i+n+1):len(x)])/(n+1+i))
+    return ny_lista
+
+print(' ')
+print('Orginal lista: ', x, '\n')
+print('smooth_b(x, 1): ', smooth_b(x, 1))
+print('smooth_b(x, 2): ', smooth_b(x, 2))
+
+# Allt funkar
+
+
+# *************************************************************
+# Alhassan Jawad - 000109XXXX
+# Civ.Elektroteknik - År 2
+# 16-9-2020
+# Programmeringsteknik 1 Obligatorisk uppgift 2 - deluppgift 2
+# *************************************************************
+
+def smooth_a(x, n):
+    if n < 0:
+        print('n är negativ!!!!')
+        exit()
+    
+    r = []
+    b = x.copy()
+    for i in range(n):
+        b.insert(0, x[0])
+        b.extend([x[-1]])
+    for i in range(n-1, len(b)-n-1):
+        r.append(sum(b[i-n+1:i+n+2])/(2*n+1))
+    print('Expanderat lista: ', b, '\n')
+    return r
+
+def round_list(a_list, ndigits):
+    ny_lista = []
+    for i in range(len(a_list)):
+        ny_lista.append(round(a_list[i], ndigits))
+    return ny_lista
+
+x = [1, 2, 6, 4, 5, 0, 1, 2]
+print('smooth_a(x, 1) rounded: ', round_list(smooth_a(x, 1), 2))
