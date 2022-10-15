@@ -1,0 +1,153 @@
+# *********************************************
+# Alhassan Jawad - 000109XXXX
+# Civ.Elektroteknik - År 2
+# 28-9-2020
+# Programmeringsteknik 1 Obligatorisk uppgift 4
+# *********************************************
+
+import csv
+import pprint as p # printar data i ett läsbart, snyggt sätt
+import matplotlib.pyplot as plt
+
+# Obligatorisk uppgift A
+
+filename = 'CO2Emissions_filtered.csv'
+def load_csv(filename):
+    with open(filename, 'r') as CO2file:
+        reader = csv.reader(CO2file)
+        #next(reader) # Ger det kommande iterationsvärde
+        Dict_list = {i[1]: [float(s) for s in i[3:]] for i in reader} # 1 = country code
+                                                                      # 3 = första utsläpp 1960
+        dict_list = dict((k.lower(), v) for k, v in Dict_list.items())
+        return dict_list
+
+p.pprint(load_csv(filename))
+
+###XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX###
+
+# Obligatorisk uppgift B
+
+def smooth_a(x, n): # För kommentarer om fknen kolla L6 Uppgift1a
+    if n < 0:
+        print('n är negativ!!!!')
+        exit()
+    
+    r = []
+    b = x.copy()
+    
+    for i in range(n):
+        b.insert(0, x[0])
+        b.extend([x[-1]])
+
+    
+    for i in range(n-1, len(b)-n-1):
+        
+        r.append(sum(b[i-n+1:i+n+2])/(2*n+1))
+    return r
+
+def smooth_b(x, n): # För kommentarer om fknen kolla L6 Uppgift1b
+    if n < 0:
+        print('n är negativ!!!!')
+        exit()
+        
+    x = x.copy() 
+    ny_lista = []
+    for i in range(n, len(x)-n):
+        ny_lista.append(sum(x[i-n:i+n+1])/(2*n+1))
+
+    for i in range(n):
+        ny_lista.insert(i, sum(x[:i+n+1])/(n+1+i))
+        ny_lista.insert(len(x)-n, sum(x[len(x)-(i+n+1):len(x)])/(n+1+i))
+    return ny_lista
+
+scandinavia = ['dnk', 'fin', 'isl', 'nor', 'swe']
+color = ['red', 'blue', 'green', 'orange', 'darkviolet']
+time = list(range(1960,2015))
+lista = load_csv('CO2Emissions_filtered.csv')
+
+fig, ax = plt.subplots()
+ax.set(xlabel='Tid (År)', ylabel='Emission (CO2(kt))', \
+       title='Yearly Emissions of CO2 in the Nordic Countries')
+
+plot = []
+for s, c in zip(scandinavia, color): # zip => sakpar en iterator 
+                                     # som samlar element från två listor 
+    plot += ax.plot(time, lista[s], color=c, linestyle=':') # skissar ursprungsdatan
+    ax.plot(time, smooth_b(lista[s], 5), color=c, linestyle='--')
+    ax.plot(time, smooth_a(lista[s], 5), color=c, linestyle='-')
+
+ax.legend(plot, scandinavia)
+fig.savefig("CO2_in_Scandinavia.png")
+
+###XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX###
+
+# Obligatorisk uppgift C
+
+pop = load_csv('population.csv')
+
+def intersection(list_1, list_2):
+    res = []
+    for c in list_1:
+        if c in list_2:
+            res.append(c)
+    return res
+
+places = intersection(lista.keys(), pop.keys()) # keys returnerar nyckeln från dictionary
+
+lista_countries = [lista[country] for country in places] # returnerar länder som finns i places
+                                                         # men tillhör CO2Emissions_filtered_csv
+pop_countries = [pop[country] for country in places] # returnerar länder som finns i places
+                                                     # men tillhör population_csv
+                                               
+emission = [index[-1] for index in lista_countries]
+position = [index[-5] for index in pop_countries]
+
+fig, ax = plt.subplots()
+
+ax.scatter(position, emission, c='blue', alpha=0.45)
+ax.set(xlabel='Population', ylabel='Emission (CO2(kt))', title='Population versus CO2 Emission')
+ax.set_xscale('log') # bestämer skalan
+ax.set_yscale('log') # bestämer skalan
+for i, land in enumerate(places):
+    ax.annotate(land, (position[i], emission[i]))
+fig.savefig("COP.png")
+
+
+
+
+#-------------------Code for more than 2 dimensions------------------------#
+import matplotlib.pyplot as plt
+import random
+
+random.seed(20191126) # seed returnerar samma random värde varje gågng man kör programmet
+fig, ax = plt.subplots(figsize=(6, 6))
+N = 50
+for color in ['tab:blue', 'tab:orange', 'tab:green']:
+    x = [200**random.random() for i in range(N)] # Behöver inte random.random() ha parameter(/parametrar)
+    y = [200**random.random() for i in range(N)] # Behöver inte random.random() ha parameter(/parametrar)
+    scale = [500*random.random() for i in range(N)] # Behöver inte random.random() ha parameter(/parametrar)
+                                                    # Scale är storleken på varje punkt
+    ax.scatter(x, y, s=scale, c=color, label=color, alpha=0.3, edgecolors='none')
+
+ax.legend()
+plt.show()
+
+
+
+#-------------------Code for plot-------------------------------------------#
+import matplotlib.pyplot as plt # så är det matplotlib eller pylot som ersätts med plt?
+from math import pi,sin
+
+# Data for plotting
+L = 100
+time = list(range(L))
+Voltage = [sin(2*pi*t/L) for t in time]
+
+fig, ax = plt.subplots() # Vad står ax för? Vad gör den här raden?
+ax.plot(time, Voltage) # Är ax det modul som används för plot? När definierades den?
+
+ax.set(xlabel='time (s)', ylabel='voltage (mV)', title='Example 1')
+ax.grid()
+
+fig.savefig("test.png")
+plt.show()
