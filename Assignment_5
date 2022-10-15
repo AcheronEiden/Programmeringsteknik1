@@ -1,0 +1,490 @@
+# *************************************************************
+# Alhassan Jawad - 000109XXXX
+# Civ.Elektroteknik - År 2
+# 12-10-2020
+# Programmeringsteknik 1 Obligatorisk uppgift 5 - deluppgift 1
+# *************************************************************
+
+from time import sleep
+import Destination
+import trafficComponents as tc
+
+
+class TrafficSystem:
+    """Defines a traffic system"""
+
+    def __init__(self): # Behöver jag ej ange (self, signal, destinations)?
+        """Initialize all components of the traffic
+        system."""
+        self.time = 0
+        self.dest = Destination.Destinations()
+        self.in_lane = tc.Lane(5)
+        self.out_lane = tc.Lane(5)
+        self.light = tc.Light(10 , 8)
+        self.extra = []
+        self.out_count = 0
+        self.caramt = 0 # car amount
+        self.time = 0   
+        
+        
+    def snapshot(self):
+        """Print a snap shot of the current state of the system."""
+        print(self.out_lane, self.light, self.in_lane, self.extra)
+
+
+    def step(self):
+            #""Hanterar den vänstra filen (lane)"""
+        if self.out_lane.get_first() is not None:
+            self.out_lane.remove_first()
+            self.out_count += 1
+        self.out_lane.step()
+        
+            #"""Hanterar flyttningen från högra filen (lane) till vänstra"""
+        light = self.light.is_green()
+        if light:
+            if self.in_lane.get_first() is not None:
+                self.out_lane.enter(self.in_lane.get_first())
+                self.in_lane.remove_first()
+      
+            #"""Hanterar den nya filen (lane)"""
+        self.in_lane.step()
+      
+            #"""Hanterar destination och lägger till extra fordon"""
+        des = self.dest.step()
+        fordon = tc.Vehicle(des, self.time)
+        if des is None:
+            if self.in_lane.is_last_free(): # Behöver jag inte säga om det 
+                                         # är true gör så!!
+                try:
+                    self.in_lane.enter(self.extra[0])
+                    self.extra.pop(0)
+                except IndexError:
+                    ()
+        if des is not None:
+            if self.in_lane.is_last_free():
+                if len(self.extra) == 0:
+                    self.in_lane.enter(fordon)
+                    self.caramt += 1
+                else:
+                    self.in_lane.enter(self.extra[0])
+                    self.extra.pop(0)
+                    self.extra.append(fordon)
+                    self.caramt += 1
+            else:
+                self.extra.append(fordon)
+                self.caramt += 1
+        self.time += 1
+        self.light.step()
+
+
+    def in_system(self):
+        """Return the number of vehicles in the system."""
+        self.total = self.in_lane.number_in_lane() +\
+            self.out_lane.number_in_lane() + len(self.extra)
+        return self.total
+
+    def print_statistics(self):
+        """Print statistics about the run."""
+        print(f'Statistik efter {self.time} tidssteg:\n')
+        print(f'Skapade fordon: {self.caramt}')
+        print(f'Fordon i systemet: {TrafficSystem.in_system(self)}')
+        print(f'Fordon utanför systemet {self.out_count}')
+
+
+def main():
+    ts = TrafficSystem()
+    for i in range(100):
+        ts.snapshot()
+        ts.step()
+        sleep(0.1)
+    print('\nFinal state:')
+    ts.snapshot()
+    print()
+    ts.print_statistics()
+
+
+if __name__ == '__main__':
+    main()
+
+
+# ***********************************************************
+# Alhassan Jawad - 000109XXXX
+# Civ.Elektroteknik - År 2
+# 13-10-2020
+# Programmeringsteknik 1 Obligatorisk uppgift 5 - delupgift 2
+# ************************************************************
+
+from statistics import mean, median
+from time import sleep
+import Destination
+import trafficComponents as tc
+
+
+class TrafficSystem:
+    """Defines a traffic system"""
+
+    def __init__(self): # Behöver jag ej ange (self, signal, destinations)?
+        """Initialize all components of the traffic
+        system."""
+        self.time = 0
+        self.dest = Destination.Destinations()
+        self.in_lane = tc.Lane(11)
+        
+        self.w_outlane = tc.Lane(8)
+        self.w_light = tc.Light(14, 6)
+        self.w_time = []
+        self.w_outamt = 0 # cars that left w
+        self.w_lengthtime = []
+        
+        self.s_outlane = tc.Lane(8)
+        self.s_light = tc.Light(14, 4)
+        self.s_time = []
+        self.s_outamt = 0 # cars that left s
+        self.s_lengthtime = []
+        
+        self.extra = []
+        self.caramt = 0 # car amount
+        self.caramt_tick = 0 # tar hand om procent statistik för kö
+        self.block = "*"
+        self.block_condition = False # Det är den som hanterar när * ges ut
+        self.block_tick = 0 # Tar hand procent statistik för blockering
+        
+        
+    def snapshot(self):
+        """Print a snap shot of the current state of the system."""
+        if self.block_condition:
+            print(self.w_light, self.w_outlane, self.block, self.in_lane,\
+                  self.extra, '\n', self.s_light, self.s_outlane)
+        else:
+            print(self.w_light, self.w_outlane, self.in_lane,\
+                  self.extra, '\n', self.s_light, self.s_outlane)
+
+
+    def step(self):
+#""Hanterar filen W"""
+        wsignal = self.w_light.is_green()
+        if wsignal:
+            if self.w_outlane.get_first() is not None:
+                self.w_outamt += 1
+                self.w_time.append(self.time)
+                self.w_outlane.remove_first()
+        self.w_outlane.step()
+        
+#""Hanterar filen S"""
+        south_signal = self.s_light.is_green()
+        if south_signal:
+            if self.s_outlane.get_first() is not None:
+                self.s_outamt += 1
+                self.s_time.append(self.time)
+                self.s_outlane.remove_first()
+        self.s_outlane.step()
+        
+#'''Hanterar flyttningen från vänster filen till W/S'''  
+        if self.in_lane.get_first() is not None:
+            if self.in_lane.get_first().__str__() == 'S' and \
+                self.s_outlane.is_last_free():
+                self.s_outlane.enter(self.in_lane.get_first())
+                self.in_lane.remove_first()
+
+            if (self.in_lane.get_first().__str__() == 'S' and \
+                self.s_outlane.is_last_free() == False)\
+                or (self.in_lane.get_first().__str__() == 'W' and \
+                    self.w_outlane.is_last_free() == False): 
+                self.block_condition = True  # Hanterar att '*' skrivs ut
+                self.block_tick += 1
+            else:  
+                self.block_condition = False
+                
+            if self.in_lane.get_first().__str__() == 'W' and \
+                self.w_outlane.is_last_free():
+                self.w_outlane.enter(self.in_lane.get_first())
+                self.in_lane.remove_first()
+        self.in_lane.step()
+
+#"""Hanterar extra fordon som anländer från E"""
+        des = self.dest.step()
+        fordon = tc.Vehicle(des, self.time)
+        
+        if fordon.destination == 'W':
+            self.w_lengthtime.append(self.time)
+        if fordon.destination == 'S':
+            self.s_lengthtime.append(self.time)
+        
+        if des is None:
+            if self.in_lane.is_last_free():
+                try:
+                    self.in_lane.enter(self.extra[0])
+                    self.extra.pop(0)
+                except IndexError:
+                    ()
+        if des is not None:
+            if self.in_lane.is_last_free():
+                if len(self.extra) == 0:
+                    self.in_lane.enter(fordon)
+                    self.caramt += 1
+                else:
+                    self.in_lane.enter(self.extra[0])
+                    self.extra.pop(0)
+                    self.extra.append(fordon)
+                    self.caramt += 1
+            else:
+                self.extra.append(fordon)
+                self.caramt += 1
+        if len(self.extra) > 0:
+            self.caramt_tick += 1
+        
+        self.w_light.step()
+        self.s_light.step()
+        self.time += 1
+  
+          
+    def in_system(self):
+        """Return the number of vehicles in the system."""
+        self.total = self.w_outlane.number_in_lane() + \
+            self.s_outlane.number_in_lane()\
+            + self.in_lane.number_in_lane() + len(self.extra)
+        return self.total
+
+
+    def print_statistics(self):
+        """Print statistics about the run."""
+        w_lista = []
+        s_lista = []
+        for i in range(len(self.w_time)):
+            w_lista.append(self.w_time[i] - self.w_lengthtime[i])
+        for i in range(len(self.s_time)):
+            s_lista.append(self.s_time[i] - self.s_lengthtime[i])
+        w_lista.sort()
+        s_lista.sort()
+        
+        print(f'Statistics after {self.time} timesteps\n')
+        print(f'Created vehicles: {self.caramt}')
+        print(f'In sytem:      {self.in_system()}')
+        print('At exit        West        South')
+        print(f'Vehicles out:  {self.w_outamt}          {self.s_outamt}')
+        print(f'Minimal time:  {w_lista[0]}          {s_lista[0]}')
+        print(f'Maximal time:  {w_lista[-1]}          {s_lista[-1]}')
+        print(f'Mean time:     {mean(w_lista):.2f}       {mean(s_lista):.2f}')
+        print(f'Median time:   {median(w_lista):.2f}       {median(s_lista):.2f}')
+        print(f'Blocked:   {int(self.block_tick)/int(self.time) * 100:.2f} %')
+        print(f'Queue:     {int(self.caramt_tick)/int(self.time) * 100:.2f} %')
+
+
+def main():
+    ts = TrafficSystem()
+    for i in range(100):
+        ts.snapshot()
+        ts.step()
+        sleep(0.1)
+    print('\nFinal state:')
+    ts.snapshot()
+    print()
+    ts.print_statistics()
+
+
+if __name__ == '__main__':
+    main()
+
+
+#-----------------------------------------#
+class Destinations:
+    """ Generates a sequence of destinations (None, 'W', 'S') """
+
+    def __init__(self):
+        """Add internal data."""
+        self._arrivals = (  # 0:52, 1:26, 2:22
+            2, 2, 2, 2, 2, 1, 2, 2, 2, 1, 1, 2, 1, 2, 2, 2, 1, 2, 1, 1,
+            2, 1, 1, 0, 2, 0, 0, 0, 0, 1, 2, 0, 0, 0, 1, 0, 0, 2, 0, 1,
+            2, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1,
+            0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0, 0,
+            1, 2, 0, 1, 0, 2, 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+
+        self._internal_time = 0
+        self._total_cycle = len(self._arrivals)
+
+    def step(self):
+        """Make one time step, reporting the desination of the next vehicle
+        (or None)."""
+        ind = self._arrivals[self._internal_time]
+        self._internal_time = (self._internal_time + 1) % len(self._arrivals)
+        return 'W' if ind == 1 else 'S' if ind == 2 else None
+#--------------------------------------------#
+
+#--------------------------------------------#
+class Vehicle:
+    """Reperesenterar trafiksimulationen"""
+
+    def __init__(self, destination, borntime):
+        self.destination = destination
+        self.borntime = borntime
+    
+    def __repr__(self): # Används för att motverka pythons vilja att
+                        # använda __repr__ utskrift!!
+        return str(self)
+
+
+    def __str__(self):
+        destination = self.destination
+        
+        return destination
+    
+class Lane:
+    """Representerar en väg med fordon"""
+    
+    def __init__(self, length):
+        self.length = length
+        self.lane = [str(".") for x in range(length)] 
+    
+    def __str__(self):
+        s = ""
+        for n in self.lane:
+            if n == ".":
+                s += n
+            else:
+                s += n.destination
+            
+        return s
+    
+    
+    def enter(self, vehicle):
+        self.vehicle = vehicle
+        self.lane.pop(-1)
+        self.lane.append(vehicle)
+        return self.lane
+    
+    
+    def is_last_free(self):
+        if self.lane[-1] == ".":
+            return True
+        else: # Behövs else-grenen?
+            return False
+    
+    
+    def step(self):
+        try:
+            self.lane.remove(".")
+            self.lane.append(".")
+        except ValueError:
+            pass
+        return self.lane
+    
+    
+    def get_first(self):
+        fp = self.lane[0] # Behövs ej då self.lane[0] kan skrivas istället för fp?
+        if fp == ".":
+            return None
+        else:
+            return fp
+
+    
+    def remove_first(self):
+        if self.lane[0] == ".":
+            return None
+        else:
+            fp = self.lane[0] # Borde inte den här vara precis innan return?
+            self.lane.pop(0) # ta bort första fordon och sätt platsen till tom
+                             # med insert
+            self.lane.insert(0, ".")
+            return fp
+
+    
+    def number_in_lane(self):
+        num = []
+        for n in self.lane:
+            if n == ".": # testa med if n != ".": num.append(x)
+                pass
+            else:
+                num.append(n)
+        return len(num)
+
+'''
+   def number_in_lane(self):
+       num = 0
+       for n in self.lane:
+           if n == ".":
+               pass
+           else:
+               num += 1
+       return num
+'''
+
+class Light:
+    """Representerar trafikljusen"""
+
+    def __init__(self, period, green_period):
+        self.period = period   # antal tidsteg mellan signalerna
+        self.green_period = green_period   # antal tidsteg då signalen är grön
+        self.färg = 1
+        self.intern_slag = 0
+        self.ljus = None # Skillnaden mellan None och Nonetype?
+
+        
+    def __str__(self):
+        if self.is_green(): # true = grön , false = röd
+            signal = "(G)" # Kan jag inte skriva return "(G)"?
+        else:
+            signal = "(R)" # Kan jag inte skriva return "(R)"?
+        return signal
+
+    
+    def step(self): # Hanterar den interna klockan
+        self.intern_slag += 1
+        if self.intern_slag == self.period: # Startar om den interna klockan
+                                            # om villkoret uppfylls
+            self.intern_slag = 0 # Behöver jag inte en return?
+
+    
+    def is_green(self): # Bestämmer signlarena
+        if self.intern_slag < self.green_period:
+            return True
+        else: # Behövs else-grenen?
+            return False
+
+"----------------Demonstrationer av light och lane----------------"
+
+def demo_lane():
+    """Demonstrerar Lane klassen"""
+    
+    a_lane = Lane(10)
+    print(a_lane)
+    v = Vehicle('N', 34)
+    a_lane.enter(v)
+    print(a_lane)
+
+    a_lane.step()
+    print(a_lane)
+    for i in range(20):
+        if i % 2 == 0:
+            u = Vehicle('S', i)
+            a_lane.enter(u)
+        a_lane.step()
+        print(a_lane)
+        if i % 3 == 0:
+            print('  out: ',
+                  a_lane.remove_first())
+    print('Number in lane:',
+          a_lane.number_in_lane())
+
+
+def demo_light():
+    """Demonstrerar Light klassen"""
+    
+    a_light = Light(7, 3)
+    for i in range(15):
+        print(i, a_light,
+              a_light.is_green())
+        a_light.step()
+
+    
+def main():
+    """Printar ut demonstrationerna"""
+    print('\nLight demonstration:\n')
+    demo_light()
+    print('\nLane demonstration:\n')
+    demo_lane() 
+    
+    """XoXoXoXoXoXoXoXoXoXo både demo funkar XoXoXoXoXoXoXoXoXoXo"""
+    
+if __name__ == '__main__':
+    main()
+#--------------------------------------#
