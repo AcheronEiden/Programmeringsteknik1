@@ -132,7 +132,7 @@ print(vietnamese_flag(-85,-140,300))
 # Alhassan Jawad - 000109XXXX
 # Civ.Elektroteknik - År 2
 # 9-9-2020
-# Programmeringsteknik 1 Obligatorisk uppgift 1 - deluupgift 3
+# Programmeringsteknik 1 Obligatorisk uppgift 1 - delupgift 3
 # ************************************************************
 
 import turtle
